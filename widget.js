@@ -4,7 +4,7 @@
   const WIDGET_CONFIG = {
     // ВНИМАНИЕ: Вставьте ваш API ключ Gemini сюда (получить можно на aistudio.google.com)
     apiKey: 'AIzaSyAVj_o3126LU8US8kKsy9l6FqZ1y0y9syE',
-    model: 'gemma-4-26b-a4b-it', // Изменено с 31b из-за нестабильности серверов (ошибка 500)
+    model: 'gemini-3.1-flash-lite',
     assistantName: 'Виртуальный помощник с Москитными сетками',
     systemInstruction: `Ты - профессиональный консультант и виртуальный помощник по москитным сеткам. 
 
@@ -15,11 +15,19 @@
 4. Запрашивай размеры по одному или предложи ввести оба сразу.
 5. На основе размеров рассчитай площадь и примерную стоимость.
 
-Твоя цель - отвечать на вопросы, помогать с замерами, рассчитывать стоимость и уточнять детали. Будь вежлив, задавай наводящие вопросы. Отвечай кратко, емко и по делу на русском языке. ВАЖНО: Отвечай простым текстом без сложного форматирования Markdown. Не используй звездочки (*) для списков или выделений.`
+Твоя цель - отвечать на вопросы, помогать с замерами, рассчитывать стоимость и уточнять детали. Будь вежлив, задавай наводящие вопросы. Отвечай кратко, емко и по делу на русском языке.
+
+ВАЖНЕЙШЕЕ ПРАВИЛО (СТРОГО):
+НИКОГДА не выводи свои внутренние рассуждения (Draft, Internal Monologue, Checking Constraints). Сразу выдавай готовый, чистый ответ для клиента.
+НЕ используй разметку Markdown (никаких звездочек, решеток, тире). Выдавай просто обычный текст.`
   };
 
   let chatHistory = [];
   let isOpen = false;
+
+  function saveHistory() {
+    localStorage.setItem('mosquitoChatHistory', JSON.stringify(chatHistory));
+  }
 
   function initWidget() {
     const root = document.createElement('div');
@@ -65,7 +73,28 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Начальное приветствие
+    // Восстановление истории из localStorage
+    const savedHistory = localStorage.getItem('mosquitoChatHistory');
+    if (savedHistory) {
+      try {
+        chatHistory = JSON.parse(savedHistory);
+        if (chatHistory.length > 0) {
+          // Приветствие не сохраняется в историю Gemini, поэтому показываем его искусственно
+          addMessage('Здравствуйте! Я ваш виртуальный помощник по москитным сеткам. Чем я могу вам помочь? Если вам нужно подобрать сетку, я могу помочь сделать замеры и рассчитать стоимость.', 'assistant');
+          
+          chatHistory.forEach(msg => {
+            const role = msg.role === 'user' ? 'user' : 'assistant';
+            const text = msg.parts[0].text;
+            addMessage(text, role);
+          });
+          return;
+        }
+      } catch (e) {
+        chatHistory = [];
+      }
+    }
+
+    // Если истории нет, просто показываем приветствие
     addMessage('Здравствуйте! Я ваш виртуальный помощник по москитным сеткам. Чем я могу вам помочь? Если вам нужно подобрать сетку, я могу помочь сделать замеры и рассчитать стоимость.', 'assistant');
   }
 
@@ -84,7 +113,7 @@
     const msgDiv = document.createElement('div');
     msgDiv.className = `mw-msg ${role}`;
 
-    // Парсинг Markdown: жирный текст, списки, переносы строк
+    // Защита от случайного маркдауна, если ИИ все же попытается его использовать
     let formattedText = text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -93,7 +122,11 @@
 
     msgDiv.innerHTML = formattedText;
     messagesContainer.appendChild(msgDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Небольшая задержка для корректной прокрутки после рендера DOM
+    setTimeout(() => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 10);
   }
 
   function showLoading() {
@@ -126,6 +159,7 @@
       role: 'user',
       parts: [{ text: text }]
     });
+    saveHistory(); // Сохраняем после отправки пользователем
 
     try {
       const responseText = await callGeminiAPI(chatHistory);
@@ -136,11 +170,13 @@
         role: 'model',
         parts: [{ text: responseText }]
       });
+      saveHistory(); // Сохраняем после ответа модели
     } catch (error) {
       removeLoading();
       console.error('Ошибка API:', error);
       addMessage('Произошла ошибка при подключении к ИИ. Проверьте API ключ или настройки модели.', 'assistant');
       chatHistory.pop();
+      saveHistory(); // Откатываем сохранение
     }
   }
 
@@ -149,16 +185,13 @@
       return "Пожалуйста, укажите ваш реальный API ключ Gemini в файле widget.js (в переменной WIDGET_CONFIG.apiKey).";
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${WIDGET_CONFIG.model}:generateContent?key=${WIDGET_CONFIG.apiKey}`;
+    const url = \`https://generativelanguage.googleapis.com/v1beta/models/\${WIDGET_CONFIG.model}:generateContent?key=\${WIDGET_CONFIG.apiKey}\`;
     
-    let modifiedHistory = JSON.parse(JSON.stringify(history));
-    if (modifiedHistory.length > 0 && modifiedHistory[0].role === 'user') {
-      // Для моделей Gemma лучше передавать системную инструкцию в самом начале первого сообщения
-      modifiedHistory[0].parts[0].text = WIDGET_CONFIG.systemInstruction + "\n\n" + modifiedHistory[0].parts[0].text;
-    }
-
     const requestBody = {
-      contents: modifiedHistory
+      system_instruction: {
+        parts: [{ text: WIDGET_CONFIG.systemInstruction }]
+      },
+      contents: history
     };
 
     const response = await fetch(url, {
