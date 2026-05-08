@@ -185,7 +185,7 @@
       return "Пожалуйста, укажите ваш реальный API ключ Gemini в файле widget.js (в переменной WIDGET_CONFIG.apiKey).";
     }
 
-    const url = \`https://generativelanguage.googleapis.com/v1beta/models/\${WIDGET_CONFIG.model}:generateContent?key=\${WIDGET_CONFIG.apiKey}\`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${WIDGET_CONFIG.model}:generateContent?key=${WIDGET_CONFIG.apiKey}`;
     
     const requestBody = {
       system_instruction: {
