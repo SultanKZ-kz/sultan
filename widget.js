@@ -1,10 +1,10 @@
 // c:\Users\LENOVO\Downloads\33\widget.js
 
-(function() {
+(function () {
   const WIDGET_CONFIG = {
     // ВНИМАНИЕ: Вставьте ваш API ключ Gemini сюда (получить можно на aistudio.google.com)
-    apiKey: 'ВАШ_GEMINI_API_KEY', 
-    model: 'gemma-4-3b', // Вы можете изменить на другую модель при необходимости (например, gemma-2-9b-it или gemini-1.5-flash)
+    apiKey: 'AIzaSyAVj_o3126LU8US8kKsy9l6FqZ1y0y9syE',
+    model: 'gemma-4-31b-it', // Вы можете изменить на другую модель при необходимости (например, gemma-2-9b-it или gemini-1.5-flash)
     assistantName: 'Виртуальный помощник с Москитными сетками',
     systemInstruction: `Ты - профессиональный консультант и виртуальный помощник по москитным сеткам. Твоя цель - отвечать на вопросы касательно москитных сеток, помогать клиентам делать замеры окон для них, рассчитывать примерную стоимость, уточнять детали и выводить точный результат. Будь вежлив, задавай наводящие вопросы для точных расчетов. Приветствуй клиента и предлагай помощь с замерами или выбором сетки. Отвечай кратко, емко и по делу на русском языке.`
   };
@@ -15,7 +15,7 @@
   function initWidget() {
     const root = document.createElement('div');
     root.id = 'mosquito-widget-root';
-    
+
     root.innerHTML = `
       <div id="mosquito-widget-window">
         <div id="mosquito-widget-header">
@@ -50,7 +50,7 @@
 
     btn.addEventListener('click', () => toggleWidget(win));
     closeBtn.addEventListener('click', () => toggleWidget(win));
-    
+
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') sendMessage();
@@ -74,11 +74,11 @@
     const messagesContainer = document.getElementById('mosquito-widget-messages');
     const msgDiv = document.createElement('div');
     msgDiv.className = `mw-msg ${role}`;
-    
+
     // Простой парсинг Markdown (жирный текст и переносы строк)
     let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     formattedText = formattedText.replace(/\n/g, '<br>');
-    
+
     msgDiv.innerHTML = formattedText;
     messagesContainer.appendChild(msgDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -119,7 +119,7 @@
       const responseText = await callGeminiAPI(chatHistory);
       removeLoading();
       addMessage(responseText, 'assistant');
-      
+
       chatHistory.push({
         role: 'model',
         parts: [{ text: responseText }]
