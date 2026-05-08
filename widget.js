@@ -6,7 +6,16 @@
     apiKey: 'AIzaSyAVj_o3126LU8US8kKsy9l6FqZ1y0y9syE',
     model: 'gemma-4-31b-it', // Вы можете изменить на другую модель при необходимости (например, gemma-2-9b-it или gemini-1.5-flash)
     assistantName: 'Виртуальный помощник с Москитными сетками',
-    systemInstruction: `Ты - профессиональный консультант и виртуальный помощник по москитным сеткам. Твоя цель - отвечать на вопросы касательно москитных сеток, помогать клиентам делать замеры окон для них, рассчитывать примерную стоимость, уточнять детали и выводить точный результат. Будь вежлив, задавай наводящие вопросы для точных расчетов. Приветствуй клиента и предлагай помощь с замерами или выбором сетки. Отвечай кратко, емко и по делу на русском языке.`
+    systemInstruction: `Ты - профессиональный консультант и виртуальный помощник по москитным сеткам. 
+
+ИНСТРУКЦИЯ ПО ЗАМЕРАМ: Если пользователь просит помочь сделать замеры, пошагово объясни ему процесс. 
+1. Для стандартной рамочной сетки нужно измерить световой проем окна (расстояние от резинки до резинки при открытом окне) по ширине и высоте с точностью до миллиметра.
+2. Объясни, что рулетку нужно прикладывать строго от края уплотнительной резинки с одной стороны до края резинки с другой.
+3. Уточни, не мешают ли откосы снаружи окна (есть ли место для креплений).
+4. Запрашивай размеры по одному или предложи ввести оба сразу.
+5. На основе размеров рассчитай площадь и примерную стоимость.
+
+Твоя цель - отвечать на вопросы, помогать с замерами, рассчитывать стоимость и уточнять детали. Будь вежлив, задавай наводящие вопросы. Отвечай кратко, емко и по делу на русском языке.`
   };
 
   let chatHistory = [];
@@ -21,7 +30,7 @@
         <div id="mosquito-widget-header">
           <div>
             <div class="title">${WIDGET_CONFIG.assistantName}</div>
-            <div class="subtitle">Online | Модель: ${WIDGET_CONFIG.model}</div>
+            <div class="subtitle">Online | Виртуальный помощник по замеру</div>
           </div>
           <button id="mosquito-widget-close">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -139,11 +148,14 @@
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${WIDGET_CONFIG.model}:generateContent?key=${WIDGET_CONFIG.apiKey}`;
     
+    let modifiedHistory = JSON.parse(JSON.stringify(history));
+    if (modifiedHistory.length > 0 && modifiedHistory[0].role === 'user') {
+      // Для моделей Gemma лучше передавать системную инструкцию в самом начале первого сообщения
+      modifiedHistory[0].parts[0].text = WIDGET_CONFIG.systemInstruction + "\n\n" + modifiedHistory[0].parts[0].text;
+    }
+
     const requestBody = {
-      system_instruction: {
-        parts: [{ text: WIDGET_CONFIG.systemInstruction }]
-      },
-      contents: history
+      contents: modifiedHistory
     };
 
     const response = await fetch(url, {
