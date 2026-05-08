@@ -3,7 +3,7 @@
 (function () {
   const WIDGET_CONFIG = {
     // ВНИМАНИЕ: Вставьте ваш API ключ Gemini сюда (получить можно на aistudio.google.com)
-    apiKey: 'ВАШ_НОВЫЙ_API_КЛЮЧ',
+    apiKey: 'AIzaSyBU7A3Wy7i67bOO5ydDV7H0awxJ2gsWQTI',
     model: 'gemini-3.1-flash-lite',
     assistantName: 'Виртуальный помощник с Москитными сетками',
     systemInstruction: `Ты - профессиональный консультант и виртуальный помощник по москитным сеткам. 
