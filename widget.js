@@ -4,7 +4,7 @@
   const WIDGET_CONFIG = {
     // ВНИМАНИЕ: Вставьте ваш API ключ Gemini сюда (получить можно на aistudio.google.com)
     apiKey: 'AIzaSyAVj_o3126LU8US8kKsy9l6FqZ1y0y9syE',
-    model: 'gemma-4-31b-it', // Вы можете изменить на другую модель при необходимости (например, gemma-2-9b-it или gemini-1.5-flash)
+    model: 'gemma-4-26b-a4b-it', // Изменено с 31b из-за нестабильности серверов (ошибка 500)
     assistantName: 'Виртуальный помощник с Москитными сетками',
     systemInstruction: `Ты - профессиональный консультант и виртуальный помощник по москитным сеткам. 
 
